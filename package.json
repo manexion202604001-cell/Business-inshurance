@@ -22,7 +22,7 @@
     "db:push": "prisma db push --skip-generate",
     "db:reset": "prisma db push --force-reset --skip-generate",
     "db:seed": "tsx prisma/seed.ts",
-    "bootstrap": "pnpm db:generate && pnpm db:reset && pnpm db:seed && pnpm --filter @p3/web fonts"
+    "bootstrap": "pnpm db:generate && pnpm db:push && pnpm db:seed && pnpm --filter @p3/web fonts"
   },
   "prisma": { "schema": "prisma/schema.prisma", "seed": "tsx prisma/seed.ts" },
   "devDependencies": {

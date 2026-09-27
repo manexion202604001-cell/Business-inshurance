@@ -65,7 +65,7 @@ pnpm build && pnpm start          # 本番モード（http://localhost:3000）
 | `pnpm poc [caseId\|all]` | UI なしで Step1〜7 を実行し `docs/poc/runs/` に JSON／Markdown を出力 |
 | `pnpm render:samples` | 3ケースの PDF／PNG を `docs/poc/renders/` に出力 |
 | `pnpm bench [回数]` | 各 Step のレイテンシ（P50/P95）・ブロック率・トークン数を計測 |
-| `pnpm db:reset && pnpm db:seed` | DB を初期化してシードを再投入 |
+| `pnpm db:reset && pnpm db:seed` | DB を初期化（全データ削除）してシードを再投入 |
 | `pnpm retention [--dry-run]` | 保持期間（既定365日）を過ぎた案件を削除 |
 
 ## 構成
