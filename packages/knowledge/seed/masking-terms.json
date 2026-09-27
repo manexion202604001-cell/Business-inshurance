@@ -80,6 +80,6 @@
   { "term": "0T\\d{4}\\(\\d+\\.\\d+\\)", "kind": "docId", "replacement": "", "isRegex": true },
   { "term": "募\\s?\\d{2,5}-\\d{4,8}", "kind": "docId", "replacement": "", "isRegex": true },
   { "term": "AXAA\\d{6,}", "kind": "docId", "replacement": "", "isRegex": true },
-  { "term": "https?://[^\\s)）」]+", "kind": "agency", "replacement": "", "isRegex": true },
+  { "term": "https?://[A-Za-z0-9._~:/?#@!$&*+,;=%-]+", "kind": "agency", "replacement": "", "isRegex": true },
   { "term": "0120-?\\d{2,3}-?\\d{3,4}", "kind": "agency", "replacement": "", "isRegex": true }
 ]

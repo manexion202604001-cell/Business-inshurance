@@ -27,7 +27,7 @@
     "id": "R05", "name": "従業員の退職金準備", "enabled": true, "priority": 5,
     "condition": { "and": [ { ">=": [ { "var": "employeeCount" }, 10 ] }, { "!": { "var": "employeeRetirementPrepared" } } ] },
     "effect": { "scores": { "ENDOWMENT_HALF": 2 }, "addToMax": ["ENDOWMENT_HALF"] },
-    "rationale": "従業員{employeeCount}名の退職金は、いつかは必ず発生する負債として計画的に準備する"
+    "rationale": "従業員{employeeCount}名の退職金は、将来いずれ支払いが発生する負債として計画的に準備する"
   },
   {
     "id": "R06", "name": "事業承継・相続への備え", "enabled": true, "priority": 6,

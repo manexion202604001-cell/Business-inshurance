@@ -1,4 +1,4 @@
-import { money, round } from './money';
+import { formatMan, money, round } from './money';
 import { benefitForBudget, estimatePremium, lookupRate, type RateLookup } from './premium';
 import type { RuleEvaluation } from './rules';
 import { classifyTaxBucket, TAX_BUCKET_LABEL, taxSchedule } from './tax';
@@ -156,7 +156,7 @@ function officerDeathBenefit(components: PlanComponent[]): number {
   return components.filter((c) => c.role === 'protection' || c.role === 'retirement' || c.role === 'succession').reduce((s, c) => s + c.deathBenefit.value, 0);
 }
 
-function finalizePlan(ctx: Ctx, tier: Tier, title: string, concept: string, components: PlanComponent[], cap: Money, reduced: boolean, notes: string[], ruleHits: string[]): Plan {
+function finalizePlan(ctx: Ctx, tier: Tier, title: string, concept: string, components: PlanComponent[], cap: Money, reduced: boolean, notes: string[], ruleHits: string[], fullPremium: number | null = null): Plan {
   const required = ctx.calc.coverage.required.value;
   const covered = ctx.calc.coverage.existing.value + officerDeathBenefit(components);
   const ratio = required > 0 ? covered / required : 1;
@@ -179,6 +179,7 @@ function finalizePlan(ctx: Ctx, tier: Tier, title: string, concept: string, comp
     totalPremium,
     budgetCap: cap,
     reducedForBudget: reduced,
+    fullPremium: reduced && fullPremium != null ? money(`plan.${tier}.fullPremium`, fullPremium, '保険料の目安に合わせて調整する前の構成の参考保険料', { fullPremium: round(fullPremium) }) : null,
     retirementFundRatio: cv > 0 && retTarget > 0 ? Math.round((cv / retTarget) * 1000) / 1000 : null,
     ruleHits,
     notes,
@@ -262,8 +263,8 @@ function fitWithShares(
 }
 
 function reducedNotes(notes: string[], cap: number, fullPremium: number, what: string) {
-  notes.push(`保険料の目安（年${cap.toLocaleString('ja-JP')}万円）に収まるよう、${what}を調整しています`);
-  if (fullPremium > cap) notes.push(`調整前の構成（満額で確保した場合）の参考保険料は年${round(fullPremium).toLocaleString('ja-JP')}万円です`);
+  notes.push(`保険料の目安（年${formatMan(cap)}）に収まるよう、${what}を調整しています`);
+  if (fullPremium > cap) notes.push(`調整前の構成（満額で確保した場合）の参考保険料は年${formatMan(fullPremium)}です`);
 }
 
 export interface BuildPlansParams {
@@ -319,20 +320,22 @@ function buildMin(ctx: Ctx, hits: string[]): Plan {
   const lk = lookup(ctx, code, { termToAge: protectionTerm(ctx) });
   let benefit = target;
   let reduced = false;
+  let fullMin: number | null = null;
   if (lk) {
     const fit = benefitForBudget(cap.value, lk.per1000, step);
     if (fit < target) {
       reduced = true;
       benefit = Math.max(fit, Math.min(target, s.minimumBenefit));
-      notes.push(`保険料の目安（年${cap.value.toLocaleString('ja-JP')}万円）に収まるよう保障額を調整しています`);
-      notes.push(`優先資金の全額（${target.toLocaleString('ja-JP')}万円）を確保する場合の参考保険料は年${round((target / 1000) * lk.per1000).toLocaleString('ja-JP')}万円です`);
+      notes.push(`保険料の目安（年${formatMan(cap.value)}）に収まるよう保障額を調整しています`);
+      fullMin = (target / 1000) * lk.per1000;
+      notes.push(`優先資金の全額（${formatMan(target)}）を確保する場合の参考保険料は年${formatMan(fullMin)}です`);
       if (fit < Math.min(target, s.minimumBenefit)) notes.push('最低限の保障額を確保すると保険料の目安を上回ります');
     }
   }
   const purpose = loanBased ? '借入金の返済資金の確保（事業保障）' : '当面の運転資金の確保（事業保障）';
   const comp = makeComponent(ctx, 'MIN', code, 'protection', benefit, purpose, { lk });
   const title = loanBased ? `「まずは借入金を守る」${TIER_NAME.MIN}` : `「まずは運転資金を守る」${TIER_NAME.MIN}`;
-  return finalizePlan(ctx, 'MIN', title, '不足する保障のうち、最も優先度の高い資金を保険料を抑えて先に確保する', [comp], cap, reduced, notes, ruleHits);
+  return finalizePlan(ctx, 'MIN', title, '不足する保障のうち、最も優先度の高い資金を保険料を抑えて先に確保する', [comp], cap, reduced, notes, ruleHits, fullMin);
 }
 
 function buildBalanced(ctx: Ctx, hits: string[]): Plan {
@@ -352,7 +355,7 @@ function buildBalanced(ctx: Ctx, hits: string[]): Plan {
   if (reduced) reducedNotes(notes, cap.value, fullPremium, '保障額と退職金準備額');
   if (calc.retirement.yearsToRetire.value < 10) notes.push('勇退までの期間が短いため、返戻率のピークと勇退時期を合わせにくい点に注意が必要です');
   const ruleHits = hits.filter((h) => ['R01', 'R03', 'R07', 'R08'].includes(h));
-  const plan = finalizePlan(ctx, 'BALANCED', `「保障と退職金準備を両立する」${TIER_NAME.BALANCED}`, '不足する保障を確保しつつ、勇退退職金の一部を返戻率のピークに合わせて準備する', comps, cap, reduced, notes, ruleHits);
+  const plan = finalizePlan(ctx, 'BALANCED', `「保障と退職金準備を両立する」${TIER_NAME.BALANCED}`, '不足する保障を確保しつつ、勇退退職金の一部を返戻率のピークに合わせて準備する', comps, cap, reduced, notes, ruleHits, fullPremium);
   if (plan.coverageRatio > 1.2) plan.notes.push('退職金の財源づくりを兼ねるため、死亡保障は必要保障額を上回ります');
   return plan;
 }
@@ -400,7 +403,7 @@ function buildMax(ctx: Ctx, hits: string[]): Plan {
     notes.push('追加の備え（第三分野・福利厚生・終身）は保険料の目安に収まらないため、構成から外しています。優先順位をご相談ください');
   }
   const ruleHits = hits.filter((h) => ['R03', 'R04', 'R05', 'R06', 'R07', 'R08'].includes(h));
-  const plan = finalizePlan(ctx, 'MAX', `「将来まで見据えて備える」${TIER_NAME.MAX}`, '必要保障額の全額と、インフレを考慮した勇退退職金の財源、経営者・従業員の将来リスクへの備えまでを一体で設計する', comps, cap, reduced, notes, ruleHits);
+  const plan = finalizePlan(ctx, 'MAX', `「将来まで見据えて備える」${TIER_NAME.MAX}`, '必要保障額の全額と、インフレを考慮した勇退退職金の財源、経営者・従業員の将来リスクへの備えまでを一体で設計する', comps, cap, reduced, notes, ruleHits, fullPremium);
   if (plan.coverageRatio > 1.2) plan.notes.push('退職金の財源づくりを兼ねるため、死亡保障は必要保障額を上回ります');
   return plan;
 }

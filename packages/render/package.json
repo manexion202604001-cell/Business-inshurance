@@ -1,0 +1,17 @@
+{
+  "name": "@p3/render",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": { ".": "./src/index.ts" },
+  "dependencies": {
+    "@fontsource/noto-serif-jp": "^5.2.0",
+    "@p3/compliance": "workspace:*",
+    "@p3/engine": "workspace:*",
+    "@p3/knowledge": "workspace:*",
+    "@p3/llm": "workspace:*",
+    "playwright-core": "1.56.1"
+  }
+}

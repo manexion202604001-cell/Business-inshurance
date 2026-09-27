@@ -226,6 +226,8 @@ export interface Plan {
   totalPremium: Money | null;
   budgetCap: Money;
   reducedForBudget: boolean;
+  /** Reference premium of the unreduced composition (when reduced for budget). */
+  fullPremium: Money | null;
   retirementFundRatio: number | null;
   ruleHits: string[];
   notes: string[];

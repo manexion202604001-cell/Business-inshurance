@@ -12,3 +12,4 @@ apps/web/test-results/
 apps/web/playwright-report/
 docs/poc/runs/
 .DS_Store
+docs/poc/renders/*.pdf
