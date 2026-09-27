@@ -6,9 +6,11 @@
   "description": "Browser-only build of PROPOSAL-3 for publishing as a claude.ai Artifact",
   "scripts": {
     "build": "node build.mjs",
+    "build:site": "node build.mjs --site",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.128.0",
     "@p3/compliance": "workspace:*",
     "@p3/engine": "workspace:*",
     "@p3/knowledge": "workspace:*",

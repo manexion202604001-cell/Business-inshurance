@@ -42,6 +42,9 @@ importers:
 
   apps/artifact:
     dependencies:
+      '@anthropic-ai/sdk':
+        specifier: ^0.128.0
+        version: 0.128.0(zod@4.6.5)
       '@p3/compliance':
         specifier: workspace:*
         version: link:../../packages/compliance

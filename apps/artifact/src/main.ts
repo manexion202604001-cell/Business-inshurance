@@ -3,9 +3,11 @@
  * Runs the same engine / compliance / templates as the server app, entirely in the browser.
  * Capabilities: db + user (cases stored privately per viewer), downloads (PDF/HTML), sample (Claude writing).
  */
+import Anthropic from '@anthropic-ai/sdk';
+import { zodOutputFormat } from '@anthropic-ai/sdk/helpers/zod';
 import { formatMan, type Money, type Plan, type Tier } from '@p3/engine';
 import { loadSeedKnowledge } from '@p3/knowledge';
-import { extractWithRules, ISSUE_TAG_LABEL, knowledgeBlock, llmConfig, SYSTEM_BASE, type NarrativeCaller } from '@p3/llm';
+import { extractWithRules, ISSUE_TAG_LABEL, knowledgeBlock, llmConfig, NarrativeSchema, SYSTEM_BASE, type NarrativeCaller } from '@p3/llm';
 import { INDUSTRIES, normalizeLog, runPipeline, toRenderInput, type CaseForm, type PipelineResult } from '@p3/pipeline';
 import { renderDoc, scanRendered, type DocType } from '@p3/render';
 import caseA from '../../../fixtures/cases/case-a.json';
@@ -25,7 +27,7 @@ interface StoredCase {
   sample?: boolean;
 }
 
-type View = { name: 'list' } | { name: 'new'; draft?: CaseForm } | { name: 'case'; id: string };
+type View = { name: 'list' } | { name: 'new'; draft?: CaseForm } | { name: 'case'; id: string } | { name: 'settings' };
 type Tab = 'plans' | 'docs' | 'memo' | 'calc';
 
 const K = loadSeedKnowledge();
@@ -62,10 +64,42 @@ function parseNum(v: string, manUnits = false): number | null {
 }
 
 // ---------------------------------------------------------------------------
+// Per-browser settings (standalone site): optional Anthropic API key for AI writing
+
+interface Settings {
+  apiKey: string;
+  model: string;
+}
+const SETTINGS_KEY = 'proposal3.settings.v1';
+const MODELS: [string, string][] = [
+  ['claude-sonnet-5', 'Claude Sonnet 5（標準）'],
+  ['claude-opus-5', 'Claude Opus 5（高品質・高コスト）'],
+  ['claude-haiku-4-5', 'Claude Haiku 4.5（高速・低コスト）'],
+];
+function loadSettings(): Settings {
+  try {
+    const v = JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? '{}') as Partial<Settings>;
+    return { apiKey: v.apiKey ?? '', model: v.model ?? 'claude-sonnet-5' };
+  } catch {
+    return { apiKey: '', model: 'claude-sonnet-5' };
+  }
+}
+function saveSettings(v: Settings) {
+  try {
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(v));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Runtime capabilities (all optional)
 
 type Cap = { use: (name: string) => Promise<unknown> };
 const claudeRt = (window as unknown as { claude?: Cap }).claude;
+/** Inside a claude.ai viewer the page gets capabilities; elsewhere (a public site) it runs standalone. */
+const MODE: 'artifact' | 'standalone' = claudeRt?.use ? 'artifact' : 'standalone';
 const use = <T>(name: string): Promise<T | null> => (claudeRt?.use ? (claudeRt.use(name) as Promise<T | null>).catch(() => null) : Promise.resolve(null));
 
 interface DbDoc {
@@ -168,6 +202,8 @@ const state = {
   sample: null as Sample | null,
   downloads: null as Downloads | null,
   capsReady: false,
+  settings: loadSettings(),
+  settingsMsg: null as string | null,
 };
 
 const app = document.getElementById('app')!;
@@ -334,46 +370,135 @@ async function exportDoc(type: DocType, format: 'pdf' | 'html') {
 // ---------------------------------------------------------------------------
 // Claude writing (sample capability)
 
+/** Instruction wrapper shared by both ways of calling Claude. */
+const aiInput = (prompt: string) =>
+  `${SYSTEM_BASE}\n\n${knowledgeBlock(K)}\n\n${prompt}\n\n出力は DRAFT と同じ構造の JSON オブジェクト1つだけにしてください（前後に説明文を付けない）。`;
+
+/** Standalone site: call the Claude API directly from the browser with the viewer's own key. */
+function apiCaller(signal: AbortSignal): NarrativeCaller {
+  const client = new Anthropic({ apiKey: state.settings.apiKey, dangerouslyAllowBrowser: true, maxRetries: 2, timeout: 180_000 });
+  const model = state.settings.model;
+  const isHaiku = model.includes('haiku');
+  return async (prompt) => {
+    const res = await client.messages.parse(
+      {
+        model,
+        max_tokens: 16000,
+        messages: [{ role: 'user', content: aiInput(prompt) }],
+        output_config: { format: zodOutputFormat(NarrativeSchema), ...(isHaiku ? {} : { effort: 'low' as const }) },
+      },
+      { signal },
+    );
+    if (res.stop_reason === 'refusal') throw new Error('Claudeが回答を控えました');
+    if (res.stop_reason === 'max_tokens') throw new Error('出力が長すぎて途中で切れました');
+    const u = res.usage;
+    return {
+      data: res.parsed_output,
+      usage: { model, inputTokens: u.input_tokens, outputTokens: u.output_tokens, cacheReadTokens: u.cache_read_input_tokens ?? 0, cacheWriteTokens: u.cache_creation_input_tokens ?? 0, ms: 0 },
+    };
+  };
+}
+
+/** claude.ai viewer: ask Claude through the `sample` capability (viewer's own usage). */
+function sampleCaller(sample: Sample, signal: AbortSignal): NarrativeCaller {
+  return async (prompt) => ({ data: await sample.json(aiInput(prompt), { signal, modelTier: 'default', cache: false }) });
+}
+
+function aiError(msg: string): string {
+  if (/not_granted/.test(msg)) return 'Claudeの利用が許可されなかったため、定型文のままです';
+  if (/cancelled|abort/i.test(msg)) return '中止しました';
+  if (/401|authentication|api[_ -]?key|x-api-key/i.test(msg)) return 'APIキーが正しくないようです。設定画面で確認してください';
+  if (/429|rate/i.test(msg)) return '利用が混み合っています。少し待ってから試してください';
+  if (/credit|billing|402/i.test(msg)) return 'APIの利用枠・残高を確認してください';
+  return msg ? `Claudeの文章作成に失敗しました（${msg.slice(0, 80)}）` : 'Claudeの文章作成に失敗しました';
+}
+
 async function polishWithClaude() {
   const c = state.current;
-  if (!c || !state.sample) return;
-  const sample = state.sample;
+  if (!c) return;
+  if (!state.sample && !state.settings.apiKey) {
+    state.view = { name: 'settings' };
+    state.settingsMsg = 'Claudeで文章を磨くには、AnthropicのAPIキーを設定してください';
+    render();
+    return;
+  }
   const ctl = new AbortController();
   state.aiAbort = ctl;
   state.aiProgress = ['Claudeが提案文を作成しています（30〜90秒ほどかかります）'];
   render();
   let n = 0;
+  const base = state.sample ? sampleCaller(state.sample, ctl.signal) : apiCaller(ctl.signal);
   const caller: NarrativeCaller = async (prompt) => {
     n++;
     if (n > 1) {
       state.aiProgress = [...state.aiProgress, `数値・表現チェックで見つかった点を直してもらっています（${n}回目）`];
       render();
     }
-    const input = `${SYSTEM_BASE}\n\n${knowledgeBlock(K)}\n\n${prompt}\n\n出力は DRAFT と同じ構造の JSON オブジェクト1つだけにしてください（前後に説明文を付けない）。`;
-    const data = await sample.json(input, { signal: ctl.signal, modelTier: 'default', cache: false });
-    return { data };
+    return base(prompt);
   };
   try {
     const result = await generate(c.form, { reuse: c, caller });
-    if (ctl.signal.aborted) throw Object.assign(new Error('cancelled'), { code: 'cancelled' });
     const meta = result.narrativeMeta;
-    if (meta.source === 'template') {
-      const msg = meta.error ?? '';
-      if (/not_granted/.test(msg)) flash('Claudeの利用が許可されなかったため、定型文のままです');
-      else if (/cancelled/.test(msg)) flash('中止しました');
-      else flash('Claudeの文章がチェックを通らなかったため、定型文のままにしました');
-      return;
-    }
+    if (ctl.signal.aborted) return flash('中止しました');
+    if (meta.source === 'template') return flash(meta.error ? aiError(meta.error) : 'Claudeの文章がチェックを通らなかったため、定型文のままにしました');
     c.result = result;
-    await persist(c);
+    if (!c.sample) await persist(c);
     flash(meta.source === 'llm' ? 'Claudeの文章に更新しました（数値・表現チェック済み）' : 'Claudeの文章に更新しました（チェックを通らなかった箇所は定型文のまま）');
   } catch (e) {
-    const code = (e as { code?: string }).code;
-    if (code !== 'cancelled') flash('Claudeの文章作成に失敗しました。時間をおいて試してください');
+    flash(aiError(e instanceof Error ? e.message : String((e as { code?: string }).code ?? '')));
   } finally {
     state.aiAbort = null;
     state.aiProgress = [];
     render();
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Settings & backup
+
+function settingsView(): string {
+  const s = state.settings;
+  const apiSection =
+    MODE === 'standalone'
+      ? `<section class="card"><h2>Claude（AI）で文章を磨く</h2>
+<p class="small" style="margin-top:0">APIキーを設定すると、提案文をClaudeが御社の状況に合わせて書き直します（任意）。数値・社名・禁止表現は同じチェックを通し、通らない箇所は定型文のまま残します。</p>
+<div class="grid2"><div class="field"><label for="set-key">AnthropicのAPIキー</label><input id="set-key" type="password" autocomplete="off" placeholder="sk-ant-..." value="${esc(s.apiKey)}"></div>
+<div class="field"><label for="set-model">モデル</label><select id="set-model">${MODELS.map(([v, l]) => `<option value="${v}" ${s.model === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div></div>
+<p class="xs muted">キーはこのブラウザ内にだけ保存され、AnthropicのAPI（api.anthropic.com）へ直接送られます。共用PCでは使わず、利用上限を設定したキーを使ってください。料金はキーの持ち主に請求されます。</p>
+<div class="row"><button class="btn primary" data-act="settings-save">保存</button>${s.apiKey ? '<button class="btn danger" data-act="settings-clear">キーを削除</button>' : ''}</div></section>`
+      : `<section class="card"><h2>Claude（AI）で文章を磨く</h2><p class="small" style="margin:0">claude.ai 上では、あなたのClaudeの利用枠で文章を磨けます（初回に許可を求められます）。APIキーの設定は不要です。</p></section>`;
+  return `<h1 style="font-size:20px">設定</h1>
+${state.settingsMsg ? `<div class="note warn">${esc(state.settingsMsg)}</div>` : ''}
+${apiSection}
+<section class="card"><h2>データの保存場所</h2>
+<p class="small" style="margin-top:0">${state.store.kind === 'account' ? '案件はあなたの claude.ai アカウントに保存され、あなただけが見られます。' : state.store.kind === 'browser' ? '案件はこのブラウザにだけ保存されます（サーバーには送信されません）。ブラウザのデータを消すと失われるため、定期的にバックアップしてください。' : '案件は保存されません（ページを閉じると消えます）。'}</p>
+<div class="row"><button class="btn" data-act="backup">バックアップを保存（JSON）</button><label class="btn" for="restore-file">バックアップから復元</label><input id="restore-file" type="file" accept=".json,application/json" hidden></div>
+<p class="xs muted">現在 ${state.cases.length} 件の案件があります。復元すると、同じIDの案件は上書きされます。</p></section>
+<section class="card"><h2>このツールについて</h2><ul class="small" style="margin:0;padding-left:20px">
+<li>必要保障額・退職金・税務区分・保険料の目安はすべてプログラムで計算しています（AIは文章化だけを担当）。</li>
+<li>保険料は開発用サンプル料率による概算で、実在の商品の保険料ではありません。正式な内容は保険会社の設計書でご確認ください。</li>
+<li>ナレッジ版：${esc(K.version)}（税制基準 ${esc(K.settings.taxAsOf)}）</li></ul></section>`;
+}
+
+async function exportBackup() {
+  const data = JSON.stringify({ app: 'proposal3', version: 1, exportedAt: new Date().toISOString(), cases: state.cases }, null, 1);
+  await saveFile(`proposal3-backup-${new Date().toISOString().slice(0, 10)}.json`, data);
+}
+
+async function importBackup(file: File) {
+  try {
+    const j = JSON.parse(await file.text()) as { app?: string; cases?: StoredCase[] };
+    if (j.app !== 'proposal3' || !Array.isArray(j.cases)) throw new Error('形式が違います');
+    let n = 0;
+    for (const c of j.cases) {
+      if (!c?.id || !c.form || !c.result) continue;
+      await persist({ ...c, sample: false });
+      n++;
+    }
+    render();
+    flash(`${n}件の案件を復元しました`);
+  } catch (e) {
+    flash(`復元できませんでした：${e instanceof Error ? e.message : ''}`);
   }
 }
 
@@ -387,13 +512,14 @@ function render() {
   let body = '';
   if (v.name === 'list') body = listView();
   else if (v.name === 'new') body = formView(v.draft ?? null);
+  else if (v.name === 'settings') body = settingsView();
   else body = caseView();
   const active = document.activeElement as HTMLElement | null;
   const focusId = active?.id;
   app.innerHTML = `
 <header class="bar"><div class="bar-in">
   <div class="brand"><b>PROPOSAL-3</b><span>法人保険 即時提案</span></div>
-  <nav class="nav">${nav('list', '案件一覧')}${nav('new', '＋ 新規作成')}</nav>
+  <nav class="nav">${nav('list', '案件一覧')}${nav('new', '＋ 新規作成')}${nav('settings', '設定')}</nav>
   ${storeLabel ? `<div class="store">${storeLabel}</div>` : ''}
 </div></header>
 <main class="wrap">${body}</main>`;
@@ -584,7 +710,7 @@ function caseView(): string {
 <div class="row">
 <button class="btn brass" data-act="pdf" data-type="summary" ${blocked ? 'disabled' : ''}>PDF（サマリー）を保存</button>
 <button class="btn" data-act="present" ${blocked ? 'disabled' : ''}>スライドで見せる</button>
-${state.sample ? `<button class="btn" data-act="ai" ${state.aiProgress.length ? 'disabled' : ''} title="あなたのClaudeの利用枠を使います">Claudeで文章を磨く</button>` : ''}
+${state.sample || MODE === 'standalone' ? `<button class="btn" data-act="ai" ${state.aiProgress.length ? 'disabled' : ''} title="${state.sample ? 'あなたのClaudeの利用枠を使います' : 'APIキーの設定が必要です'}">Claudeで文章を磨く</button>` : ''}
 </div></div>
 ${aiBox}
 ${compBar(comp)}
@@ -766,6 +892,7 @@ app.addEventListener('paste', (e) => {
 
 app.addEventListener('change', async (e) => {
   const t = e.target as HTMLInputElement;
+  if (t.id === 'restore-file' && t.files?.[0]) return importBackup(t.files[0]);
   if (t.id !== 'f-file' || !t.files?.[0]) return;
   const file = t.files[0];
   const raw = await file.text();
@@ -783,6 +910,26 @@ app.addEventListener('click', async (e) => {
     case 'nav-list':
       state.view = { name: 'list' };
       return render();
+    case 'nav-settings':
+      state.view = { name: 'settings' };
+      state.settingsMsg = null;
+      return render();
+    case 'settings-save': {
+      const key = (document.getElementById('set-key') as HTMLInputElement).value.trim();
+      const model = (document.getElementById('set-model') as HTMLSelectElement).value;
+      if (key && !/^sk-ant-/.test(key)) return flash('APIキーの形式が違うようです（sk-ant- で始まります）');
+      state.settings = { apiKey: key, model };
+      state.settingsMsg = null;
+      render();
+      return flash(saveSettings(state.settings) ? '設定を保存しました' : 'このブラウザでは設定を保存できません（このページを開いている間だけ有効です）');
+    }
+    case 'settings-clear':
+      state.settings = { ...state.settings, apiKey: '' };
+      saveSettings(state.settings);
+      render();
+      return flash('APIキーを削除しました');
+    case 'backup':
+      return exportBackup();
     case 'nav-new':
       state.view = { name: 'new' };
       state.formErrors = {};

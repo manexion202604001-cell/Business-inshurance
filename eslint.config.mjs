@@ -3,13 +3,13 @@ import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
   {
-    ignores: ['**/node_modules/**', '**/.next/**', '**/dist/**', '**/coverage/**', 'apps/web/next-env.d.ts', 'apps/web/playwright-report/**', 'apps/web/test-results/**', 'docs/**'],
+    ignores: ['**/node_modules/**', '**/.next/**', '**/dist/**', '**/coverage/**', 'apps/web/next-env.d.ts', 'apps/web/playwright-report/**', 'apps/web/test-results/**', 'apps/artifact/dist/**', 'docs/**'],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
     files: ['**/*.mjs'],
-    languageOptions: { globals: { process: 'readonly', console: 'readonly' } },
+    languageOptions: { globals: { process: 'readonly', console: 'readonly', Buffer: 'readonly' } },
   },
   {
     rules: {

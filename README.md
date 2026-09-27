@@ -43,14 +43,29 @@ pnpm build && pnpm start          # 本番モード（http://localhost:3000）
 
 サンプルの架空企業3社（`fixtures/cases/`）は新規作成画面の「サンプル」ボタンから読み込めます。シード直後は3社の未作成案件も登録されています。
 
-## Web版（ブラウザ完結・claude.ai アーティファクト）
+## Web版（サーバー不要・ブラウザで完結）
 
-サーバーなしでブラウザだけで動く版を `apps/artifact` に用意しています（計算・コンプライアンスチェック・資料テンプレートはサーバー版と同じコード）。
+計算・コンプライアンスチェック・資料テンプレートはサーバー版と同じコードを、ブラウザだけで動くようにまとめた版です（`apps/artifact`）。同じファイルを2か所で公開できます。
 
-- 公開先：https://claude.ai/artifact/EhJ8jphDRoHVfa64SUbtUS （初期状態は作成者のみ閲覧可。共有はページの「共有」メニューから）
-- 案件はログイン中の利用者ごとに非公開で保存、PDF／HTMLの保存、「Claudeで文章を磨く」（閲覧者の Claude 利用枠を使用）に対応
-- サーバー版との違い：PDF は画像ベース（ブラウザで生成）、承認フロー・監査ログ・ナレッジ管理画面・docx/pdf の取り込みはなし
-- ビルド：`pnpm --filter @p3/artifact build` → `apps/artifact/dist/proposal3.html`
+| 公開先 | URL | 案件の保存先 | AIでの文章化 |
+|---|---|---|---|
+| 一般のWebサイト（GitHub Pages） | https://manexion202604001-cell.github.io/Business-inshurance/ （下記の有効化が必要） | そのブラウザ（バックアップ／復元あり） | 「設定」で各自の Anthropic APIキーを入力した場合 |
+| claude.ai アーティファクト | https://claude.ai/artifact/EhJ8jphDRoHVfa64SUbtUS （作成者のみ。共有は「共有」メニューから・組織内のみ） | 利用者の claude.ai アカウント（本人のみ閲覧） | 利用者の Claude 利用枠（初回に許可） |
+
+### GitHub Pages の有効化（初回のみ・リポジトリ管理者）
+
+1. GitHub のリポジトリで **Settings → Pages** を開く
+2. **Source** を「Deploy from a branch」にする
+3. **Branch** で `claude/vibrant-heisenberg-lco3me`（main にマージ後は `main`）、フォルダ `/docs` を選んで **Save**
+4. 1〜2分後に https://manexion202604001-cell.github.io/Business-inshurance/ で開けます
+
+アプリを更新したら `pnpm --filter @p3/artifact build:site` で `docs/index.html` を作り直して push してください。
+
+### Web版でできること・できないこと
+
+- できる：3案作成（ログからの自動補完・仮置き値の修正）、顧客用資料（サマリー／設計書／スライド）のプレビュー、PDF・HTML保存、営業メモ、計算の内訳、推しプランの指定、案件のバックアップ・復元、Claude による文章化（数値・社名・禁止表現は同じチェックを通し、通らない箇所は定型文）
+- サーバー版のみ：ログイン・権限、承認フロー、監査ログ、ナレッジ管理画面、docx/pdf の取り込み、文字検索できる PDF（Web版の PDF は画像ベース）
+- 案件データはサーバーに送信されません（GitHub Pages 版はブラウザ内のみ）。APIキーはそのブラウザにだけ保存され、Anthropic の API に直接送られます
 
 ## 環境変数
 
