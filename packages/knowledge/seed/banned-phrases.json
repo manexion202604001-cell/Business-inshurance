@@ -1,0 +1,23 @@
+[
+  { "phrase": "節税", "isRegex": false, "category": "tax_saving", "severity": "error", "suggestion": "「保障の確保」「経理処理の取扱い」など、保障目的の表現に言い換えてください", "allowContext": ["節税効果はありません", "節税を目的とするものではありません", "節税効果はない", "節税を目的としたものではありません", "節税を主目的とするものではありません", "節税を目的とした提案ではありません", "節税目的ではなく", "節税をご希望", "節税になるものを", "節税を訴求しない", "節税を目的・効果として", "節税のための"] },
+  { "phrase": "税金(?:が|を)(?:減る|減らす|安くなる|安く)", "isRegex": true, "category": "tax_saving", "severity": "error", "suggestion": "税務は「経理処理の取扱い」として事実のみ記載してください" },
+  { "phrase": "利益の圧縮", "isRegex": false, "category": "tax_saving", "severity": "error", "suggestion": "「経理処理の取扱い」に言い換えてください" },
+  { "phrase": "利益を圧縮", "isRegex": false, "category": "tax_saving", "severity": "error", "suggestion": "「経理処理の取扱い」に言い換えてください" },
+  { "phrase": "課税の繰(?:り)?延べ", "isRegex": true, "category": "tax_saving", "severity": "error", "suggestion": "課税の繰延べを利点として訴求しないでください" },
+  { "phrase": "税金対策", "isRegex": false, "category": "tax_saving", "severity": "error", "suggestion": "「保障の確保」「財源の準備」に言い換えてください" },
+  { "phrase": "税負担(?:を|が)?軽く", "isRegex": true, "category": "tax_saving", "severity": "error", "suggestion": "法人の税負担軽減を訴求しないでください" },
+  { "phrase": "必ず(?:増え|儲か|得|戻)", "isRegex": true, "category": "assurance", "severity": "error", "suggestion": "断定表現を避け「〜が見込まれます」「〜の可能性があります」としてください" },
+  { "phrase": "必ず", "isRegex": false, "category": "assurance", "severity": "warning", "suggestion": "断定と受け取られないか確認してください" },
+  { "phrase": "確実に", "isRegex": false, "category": "assurance", "severity": "error", "suggestion": "「〜に備えられます」など断定しない表現にしてください" },
+  { "phrase": "元本(?:を)?保証", "isRegex": true, "category": "assurance", "severity": "error", "suggestion": "変額保険の解約返戻金に最低保証はありません" },
+  { "phrase": "損(?:は|を)?しない", "isRegex": true, "category": "assurance", "severity": "error", "suggestion": "損失の可能性を否定する表現は使えません" },
+  { "phrase": "絶対", "isRegex": false, "category": "assurance", "severity": "error", "suggestion": "断定表現は使えません" },
+  { "phrase": "100%安心", "isRegex": false, "category": "assurance", "severity": "error", "suggestion": "断定表現は使えません" },
+  { "phrase": "リスク(?:は)?(?:ゼロ|ありません|なし)", "isRegex": true, "category": "assurance", "severity": "error", "suggestion": "リスクがない旨の表現は使えません" },
+  { "phrase": "他社(?:より|よりも|と比べて)(?:有利|安い|お得|優れ)", "isRegex": true, "category": "comparison", "severity": "error", "suggestion": "他社・他商品との優劣比較はできません" },
+  { "phrase": "[^\\s、。]{1,10}社より(?:安い|有利|お得)", "isRegex": true, "category": "comparison", "severity": "error", "suggestion": "他社・他商品との優劣比較はできません" },
+  { "phrase": "業界(?:最安|No\\.?1|一番)", "isRegex": true, "category": "comparison", "severity": "error", "suggestion": "根拠のない最上級表現は使えません" },
+  { "phrase": "今すぐ(?:入らないと|加入しないと)", "isRegex": true, "category": "fear", "severity": "error", "suggestion": "過度に不安をあおる表現は使えません" },
+  { "phrase": "倒産(?:します|する)(?:よ|ぞ)", "isRegex": true, "category": "fear", "severity": "error", "suggestion": "断定的に不安をあおる表現は使えません" },
+  { "phrase": "手遅れ", "isRegex": false, "category": "fear", "severity": "warning", "suggestion": "不安をあおる表現になっていないか確認してください" }
+]

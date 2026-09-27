@@ -1,0 +1,30 @@
+{
+  "id": "case-b",
+  "title": "ケースB：IT企業（若い経営者・借入小）",
+  "company": {
+    "name": "株式会社アオバデジタル",
+    "industry": "information",
+    "fiscalMonth": 9,
+    "revenue": 20000,
+    "ordinaryProfit": 2500,
+    "netAssets": null,
+    "loanTotal": 3000,
+    "loanShortTerm": 1000,
+    "loanMonthlyRepay": 80,
+    "monthlyLabor": 600,
+    "monthlyFixed": 250,
+    "employeeCount": 18
+  },
+  "officer": {
+    "role": "社長",
+    "age": 45,
+    "sex": "M",
+    "monthlyPay": 100,
+    "tenureYears": 6,
+    "plannedRetireAge": 60,
+    "legalHeirs": 2,
+    "guaranteesLoan": false
+  },
+  "existingPolicies": [],
+  "rawLog": "営業：本日はありがとうございます。業績は順調と伺っています。\n社長：おかげさまで、SaaSの売上が伸びて年商は2億くらいになりました。経常利益は2,500万くらいです。\n営業：借入はございますか。\n社長：公庫から3,000万ほど。月80万ずつ返してます。あと1,000万は短期で借りてます。\n営業：社長にもしものことがあった場合の備えはいかがですか。\n社長：正直、法人では保険に何も入ってないんですよね。自分がいないと開発もお客さんとの関係も回らないので、そこは心配です。\n営業：人件費はどのくらいでしょうか。\n社長：18人で月600万くらい。オフィスとかサーバーで250万くらいかな。\n社長：60歳くらいでセミリタイアしたいので、退職金はそれまでに準備しておきたいです。\n社長：従業員の退職金はまだ何も制度がないです。いい人に長く働いてほしいんですけどね。\n社長：運用で増えるタイプにも興味はあるけど、元本割れはちょっと不安ですね。"
+}

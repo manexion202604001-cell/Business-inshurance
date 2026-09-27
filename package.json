@@ -1,0 +1,43 @@
+{
+  "name": "proposal-3",
+  "private": true,
+  "version": "0.1.0",
+  "description": "法人保険 営業支援・即時提案AIシステム（PROPOSAL-3）",
+  "packageManager": "pnpm@10.33.0",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "dev": "pnpm --filter @p3/web dev",
+    "build": "pnpm --filter @p3/web build",
+    "start": "pnpm --filter @p3/web start",
+    "lint": "eslint .",
+    "typecheck": "tsc -p tsconfig.json && pnpm -r --if-present typecheck",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "pnpm --filter @p3/web test:e2e",
+    "poc": "tsx scripts/poc.ts",
+    "render:samples": "tsx scripts/render-samples.ts",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push --skip-generate",
+    "db:reset": "prisma db push --force-reset --skip-generate",
+    "db:seed": "tsx prisma/seed.ts",
+    "setup": "pnpm db:generate && pnpm db:reset && pnpm db:seed"
+  },
+  "prisma": { "schema": "prisma/schema.prisma", "seed": "tsx prisma/seed.ts" },
+  "devDependencies": {
+    "@eslint/js": "^9.39.0",
+    "@types/node": "^22.10.0",
+    "@vitest/coverage-v8": "^3.2.4",
+    "eslint": "^9.39.0",
+    "prisma": "6.19.3",
+    "tsx": "^4.20.0",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.46.0",
+    "vitest": "^3.2.4"
+  },
+  "dependencies": {
+    "@prisma/client": "6.19.3"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["@prisma/client", "@prisma/engines", "prisma", "esbuild", "sharp", "@tailwindcss/oxide"]
+  }
+}

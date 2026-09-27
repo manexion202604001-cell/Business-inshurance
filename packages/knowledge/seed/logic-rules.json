@@ -1,0 +1,50 @@
+[
+  {
+    "id": "R01", "name": "借入金・連帯保証への備え", "enabled": true, "priority": 1,
+    "condition": { "or": [ { ">=": [ { "var": "loanToRevenue" }, 0.3 ] }, { "==": [ { "var": "guaranteesLoan" }, true ] } ] },
+    "effect": { "scores": { "TERM_DECREASING": 2, "TERM_LOW_CV": 2 } },
+    "rationale": "借入金の返済と、代表者の連帯保証債務がご家族に相続されるリスクに、借入残高に合わせた保障で備える"
+  },
+  {
+    "id": "R02", "name": "資金繰りへの配慮", "enabled": true, "priority": 2,
+    "condition": { "and": [ { ">": [ { "var": "gap" }, 0 ] }, { "<": [ { "var": "profitMargin" }, 0.03 ] } ] },
+    "effect": { "scores": { "TERM_LOW_CV": 1 }, "minBudgetFactor": 0.8 },
+    "rationale": "資金繰りを圧迫しない範囲で、最も必要な保障を先に確保する"
+  },
+  {
+    "id": "R03", "name": "勇退退職金の財源準備", "enabled": true, "priority": 3,
+    "condition": { "and": [ { ">=": [ { "var": "yearsToRetire" }, 10 ] }, { "!": { "var": "retirementPrepared" } } ] },
+    "effect": { "scores": { "TERM_LEVEL_LONG": 2, "VARIABLE_TERM": 2 } },
+    "rationale": "勇退まで{yearsToRetire}年あるため、解約返戻金のピークを勇退時期に合わせて退職金の財源とする"
+  },
+  {
+    "id": "R04", "name": "就業不能リスクへの備え", "enabled": true, "priority": 4,
+    "condition": { ">=": [ { "var": "ceoAge" }, 60 ] },
+    "effect": { "scores": { "THIRD_SECTOR": 3 }, "addToMax": ["THIRD_SECTOR"], "penalizeLongVariable": true },
+    "rationale": "経営者の高齢化にともない、死亡だけでなく病気・就業不能による経営リスクが高まる（経営者年齢の山は1995年の47歳から2018年の69歳へ、男性の健康寿命は72.68歳）"
+  },
+  {
+    "id": "R05", "name": "従業員の退職金準備", "enabled": true, "priority": 5,
+    "condition": { "and": [ { ">=": [ { "var": "employeeCount" }, 10 ] }, { "!": { "var": "employeeRetirementPrepared" } } ] },
+    "effect": { "scores": { "ENDOWMENT_HALF": 2 }, "addToMax": ["ENDOWMENT_HALF"] },
+    "rationale": "従業員{employeeCount}名の退職金は、いつかは必ず発生する負債として計画的に準備する"
+  },
+  {
+    "id": "R06", "name": "事業承継・相続への備え", "enabled": true, "priority": 6,
+    "condition": { "or": [ { "in": [ "successor", { "var": "tags" } ] }, { "in": [ "inheritance", { "var": "tags" } ] } ] },
+    "effect": { "scores": { "WHOLE_LIFE": 3 }, "addToMax": ["WHOLE_LIFE"] },
+    "rationale": "事業承継・相続に備え、納税資金と遺産分割資金を準備する"
+  },
+  {
+    "id": "R07", "name": "決算・信用への配慮", "enabled": true, "priority": 7,
+    "condition": { "or": [ { "==": [ { "var": "deficit" }, true ] }, { "<": [ { "var": "netAssetsToRevenue" }, 0.1 ] } ] },
+    "effect": { "penalizeTaxBucketGte": 3 },
+    "rationale": "赤字決算は信用低下から融資が難しくなるリスクがあるため、資産計上の大きい設計は慎重に検討する"
+  },
+  {
+    "id": "R08", "name": "既存契約の見直し", "enabled": true, "priority": 8,
+    "condition": { ">": [ { "var": "peakMisalignment" }, { "var": "peakMisalignmentThreshold" } ] },
+    "effect": { "memoPoint": "既存契約の解約返戻率のピーク（{existingPeakAge}歳ごろ）と勇退予定（{retireAge}歳）が{peakMisalignment}年ずれています。既存契約の活かし方（ピーク時期の確認、保障の継続・見直し）を先に整理しましょう" },
+    "rationale": "既存契約の返戻率のピークが勇退時期とずれているため、既存契約の活かし方を先に整理する"
+  }
+]

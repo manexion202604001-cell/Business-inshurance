@@ -1,0 +1,6 @@
+[
+  { "bucket": 1, "label": "最高解約返戻率50%以下", "peakRateFrom": 0, "peakRateTo": 50, "assetPeriod": "なし", "assetAmount": "なし（全額損金）", "reversal": "―", "source": { "title": "法人税基本通達9-3-5の2", "page": null }, "asOf": "2026-02-01" },
+  { "bucket": 2, "label": "最高解約返戻率50%超70%以下", "peakRateFrom": 50, "peakRateTo": 70, "assetPeriod": "保険期間の当初40%", "assetAmount": "当期分支払保険料 × 4/10（6/10は損金）", "reversal": "保険期間の75%経過後から満了まで均等に取崩し", "note": "1被保険者あたりの年換算保険料相当額（全社合算）が30万円以下の場合は全額損金", "source": { "title": "法人税基本通達9-3-5の2", "page": null }, "asOf": "2026-02-01" },
+  { "bucket": 3, "label": "最高解約返戻率70%超85%以下", "peakRateFrom": 70, "peakRateTo": 85, "assetPeriod": "保険期間の当初40%", "assetAmount": "当期分支払保険料 × 6/10（4/10は損金）", "reversal": "保険期間の75%経過後から満了まで均等に取崩し", "source": { "title": "法人税基本通達9-3-5の2", "page": null }, "asOf": "2026-02-01" },
+  { "bucket": 4, "label": "最高解約返戻率85%超", "peakRateFrom": 85, "peakRateTo": 100, "assetPeriod": "契約日から最高解約返戻率となる期間まで（延長・最低5年の規定あり）", "assetAmount": "1〜10年目：保険料×最高返戻率×9/10、11年目以降：×7/10", "reversal": "解約返戻金相当額が最も高い金額となる期間経過後から満了まで均等に取崩し", "source": { "title": "法人税基本通達9-3-5の2", "page": null }, "asOf": "2026-02-01" }
+]

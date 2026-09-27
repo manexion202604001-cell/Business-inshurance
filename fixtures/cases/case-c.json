@@ -1,0 +1,32 @@
+{
+  "id": "case-c",
+  "title": "ケースC：建設業（高齢の代表・既存保険あり）",
+  "company": {
+    "name": "有限会社北斗建設",
+    "industry": "construction",
+    "fiscalMonth": 6,
+    "revenue": 40000,
+    "ordinaryProfit": 800,
+    "netAssets": null,
+    "loanTotal": 12000,
+    "loanShortTerm": 2000,
+    "loanMonthlyRepay": 200,
+    "monthlyLabor": 1200,
+    "monthlyFixed": 400,
+    "employeeCount": 30
+  },
+  "officer": {
+    "role": "社長",
+    "age": 65,
+    "sex": "M",
+    "monthlyPay": 120,
+    "tenureYears": 25,
+    "plannedRetireAge": 70,
+    "legalHeirs": 4,
+    "guaranteesLoan": true
+  },
+  "existingPolicies": [
+    { "category": "TERM_LEVEL_LONG", "purpose": "事業保障・退職金", "deathBenefit": 15000, "annualPremium": null, "issueAge": 55, "maturityAge": 100, "peakReturnRate": null, "peakYear": 20, "note": "10年前に加入。返戻率のピークは経過20年（75歳）" }
+  ],
+  "rawLog": "営業：本日はお時間ありがとうございます。最近の受注状況はいかがですか。\n社長：公共工事が中心でね、売上は40億くらいで横ばい。ただ資材が上がって利益は薄いよ。\n営業：借入はどのくらいございますか。\n社長：銀行から1億2千万。俺が連帯保証してる。\n社長：そろそろ息子に継がせたいんだけど、まだ現場しか分かってないからね。あと5年はやるつもり。\n社長：保険は昔入った定期があるよ。1億5千万だったかな。〇〇生命の△△ってやつ。\n営業：もしものとき、銀行さんとの関係はどうなりそうですか。\n社長：それが一番心配だね。俺がいなくなったら貸し剥がしとか来るんじゃないかって。\n社長：従業員の退職金は中退共に入ってるから、そっちは大丈夫。\n社長：最近ちょっと血圧が高くてね。現場に出られなくなったらと思うと不安だよ。\n社長：あと、節税になるやつがいいな。"
+}

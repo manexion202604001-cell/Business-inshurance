@@ -1,0 +1,10 @@
+[
+  { "key": "purpose_death_retirement", "label": "社長の生命保険加入目的：死亡退職金・弔慰金の準備", "value": 74.3, "unit": "%", "text": "社長が法人契約の生命保険に加入する目的は「死亡退職金・弔慰金の準備」が74.3％で最多", "source": { "title": "エフピー教育出版「令和元年 企業経営と生命保険に関する調査」", "page": null }, "asOf": "2019-01-01" },
+  { "key": "purpose_working_capital", "label": "社長の生命保険加入目的：万一に備えた運転資金の確保", "value": 40.5, "unit": "%", "text": "「万一に備えた運転資金の確保」は40.5％", "source": { "title": "エフピー教育出版「令和元年 企業経営と生命保険に関する調査」", "page": null }, "asOf": "2019-01-01" },
+  { "key": "purpose_retirement", "label": "社長の生命保険加入目的：勇退退職金の準備", "value": 36.0, "unit": "%", "text": "「勇退退職金の準備」は36.0％", "source": { "title": "エフピー教育出版「令和元年 企業経営と生命保険に関する調査」", "page": null }, "asOf": "2019-01-01" },
+  { "key": "ceo_age_peak", "label": "中小企業の経営者年齢の山", "value": 69, "unit": "歳", "text": "中小企業の経営者年齢の山は1995年の47歳から2018年には69歳へ移動", "numbers": [1995, 47, 2018, 69], "source": { "title": "中小企業庁「2019年版 中小企業白書」", "page": null }, "asOf": "2019-04-01" },
+  { "key": "healthy_life_male", "label": "健康寿命（男性）", "value": 72.68, "unit": "歳", "text": "男性の健康寿命は72.68歳（2019年）", "numbers": [72.68, 2019], "source": { "title": "厚生労働省 資料（令和3年12月）", "page": null }, "asOf": "2021-12-01" },
+  { "key": "working_capital_months", "label": "事業保障資金の目安", "value": 12, "unit": "か月", "text": "事業保障資金の目安は運転資金の6〜12か月分", "numbers": [6, 12], "source": { "title": "変額保険（定期型）法人向けパンフレット", "page": null }, "asOf": "2026-05-01" },
+  { "key": "inflation_real_value", "label": "物価上昇による実質価値（1,000万円・年2.0%）", "value": 673, "unit": "万円", "text": "年2.0%の物価上昇が続くと、1,000万円の実質価値は10年後に約820万円、20年後に約673万円、30年後に約552万円", "numbers": [1000, 2.0, 10, 820, 20, 673, 30, 552], "source": { "title": "変額保険（定期型）法人向けパンフレット", "page": null }, "asOf": "2026-05-01" },
+  { "key": "effective_tax_rate", "label": "法人実効税率（目安）", "value": 33.58, "unit": "%", "text": "納税準備資金の計算に用いる法人実効税率は33.58％（目安）", "source": { "title": "経営者のリスク", "page": null }, "asOf": "2022-08-01" }
+]
