@@ -21,7 +21,12 @@ export function normalizeLog(raw: string, terms: MaskingTerm[], opts: { pii?: bo
   let t = stripSubtitles(raw).normalize('NFKC');
   t = t
     .split(/\r?\n/)
-    .map((l) => l.replace(/^\s*[[【(（]?([^\]】)）:：]{1,12})[\]】)）]?\s*[:：]\s*/, '$1：').trimEnd())
+    .map((l) =>
+      l
+        .replace(/^\s*[[【(（]([^\]】)）:：]{1,12})[\]】)）]\s*[:：]?\s*/, '$1：')
+        .replace(/^\s*([^\s:：「」【】[\]]{1,12})\s*[:：]\s*/, '$1：')
+        .trimEnd(),
+    )
     .filter((l, i, arr) => l.trim() !== '' || (i > 0 && arr[i - 1]!.trim() !== ''))
     .join('\n')
     .trim();

@@ -1,0 +1,216 @@
+// PROPOSAL-3 data model. SQLite for development; switch `provider` to "postgresql" and set
+// DATABASE_URL for production (see docs/DECISIONS.md).
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String       @id @default(cuid())
+  email        String       @unique
+  name         String
+  role         String // sales | manager | admin
+  passwordHash String
+  createdAt    DateTime     @default(now())
+  cases        Case[]       @relation("CaseOwner")
+  feedback     Feedback[]
+}
+
+model Company {
+  id               String           @id @default(cuid())
+  ownerId          String
+  name             String
+  industry         String
+  fiscalMonth      Int?
+  revenue          Int
+  ordinaryProfit   Int?
+  netAssets        Int?
+  loanTotal        Int
+  loanShortTerm    Int?
+  loanMonthlyRepay Int?
+  monthlyLabor     Int?
+  monthlyFixed     Int?
+  employeeCount    Int
+  createdAt        DateTime         @default(now())
+  officers         Officer[]
+  policies         ExistingPolicy[]
+  cases            Case[]
+}
+
+model Officer {
+  id               String   @id @default(cuid())
+  companyId        String
+  company          Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  role             String
+  age              Int
+  sex              String
+  monthlyPay       Int
+  tenureYears      Int
+  plannedRetireAge Int?
+  legalHeirs       Int?
+  guaranteesLoan   Boolean  @default(false)
+}
+
+model ExistingPolicy {
+  id             String  @id @default(cuid())
+  companyId      String
+  company        Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  officerId      String?
+  category       String
+  purpose        String?
+  deathBenefit   Int?
+  annualPremium  Int?
+  issueAge       Int?
+  maturityAge    Int?
+  peakReturnRate Float?
+  peakYear       Int?
+  note           String?
+}
+
+model Case {
+  id               String       @id @default(cuid())
+  companyId        String
+  company          Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  ownerId          String
+  owner            User         @relation("CaseOwner", fields: [ownerId], references: [id])
+  rawLog           String
+  form             Json // CaseForm snapshot used for generation
+  normalizedLog    String?
+  inputMaskHits    Json?
+  extracted        Json?
+  engineInput      Json?
+  calc             Json?
+  plans            Json?
+  outputs          Json? // narrative
+  compliance       Json?
+  docReports       Json?
+  metrics          Json?
+  status           String // draft|generating|generated|blocked|approved|presented|error
+  error            String?
+  recommendedTier  String?
+  knowledgeVersion String?
+  promptVersion    String?
+  llmModel         String?
+  generatedAt      DateTime?
+  approvedById     String?
+  approvedAt       DateTime?
+  shareToken       String?      @unique
+  shareExpiresAt   DateTime?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  events           AuditEvent[]
+  feedback         Feedback[]
+
+  @@index([ownerId, createdAt])
+}
+
+model InsuranceCategory {
+  code      String   @id
+  name      String
+  data      Json // description, pros, cons, typicalUse, riskNotes, mandatoryDisclaimers, taxRuleRef, flags, variants
+  source    Json
+  asOf      String
+  sortOrder Int      @default(0)
+  updatedAt DateTime @updatedAt
+}
+
+model TaxRule {
+  bucket    Int      @id
+  data      Json
+  asOf      String
+  updatedAt DateTime @updatedAt
+}
+
+model LogicRule {
+  id        String   @id
+  name      String
+  enabled   Boolean  @default(true)
+  priority  Int      @default(0)
+  condition Json
+  effect    Json
+  rationale String
+  updatedAt DateTime @updatedAt
+}
+
+model MaskingTerm {
+  id          Int     @id @default(autoincrement())
+  term        String
+  kind        String
+  replacement String
+  isRegex     Boolean @default(false)
+}
+
+model BannedPhrase {
+  id           Int     @id @default(autoincrement())
+  phrase       String
+  isRegex      Boolean @default(false)
+  category     String
+  severity     String
+  suggestion   String
+  allowContext Json?
+}
+
+model ReferenceRate {
+  id                      Int     @id @default(autoincrement())
+  category                String
+  sex                     String
+  age                     Int
+  termToAge               Int
+  annualPremiumPer1000man Float
+  peakReturnRate          Float?
+  peakYear                Int?
+  source                  String
+  asOf                    String
+  isSample                Boolean @default(false)
+
+  @@index([category, sex, age])
+}
+
+model Statistic {
+  key   String @id
+  data  Json
+  asOf  String
+}
+
+/// Key-value settings: engine (EngineSettings), presentation, disclaimers, internalRefs.
+model Setting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+}
+
+model KnowledgeVersion {
+  id          String   @id
+  label       String
+  snapshot    Json
+  publishedAt DateTime @default(now())
+  publishedBy String
+}
+
+model AuditEvent {
+  id      String   @id @default(cuid())
+  caseId  String?
+  case    Case?    @relation(fields: [caseId], references: [id], onDelete: SetNull)
+  actor   String
+  action  String
+  payload Json?
+  at      DateTime @default(now())
+
+  @@index([caseId, at])
+}
+
+model Feedback {
+  id        String   @id @default(cuid())
+  caseId    String
+  case      Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  target    String
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now())
+}

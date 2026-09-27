@@ -134,6 +134,12 @@ export function templatePlanNarrative(ctx: NarrativeContext, p: Plan): PlanNarra
 
 function objectionResponse(ctx: NarrativeContext, objection: string): { response: string; backedBy: string[] } {
   const { calc } = ctx;
+  if (/節税|税負担|税金/.test(objection)) {
+    return {
+      response: '法人保険は万一の際の保障を目的とするものです。保険料を損金算入しても、受け取る保険金や解約返戻金は益金に算入されるため、通期での節税効果はありません。経理処理の取扱いは設計書をもとに、顧問税理士の先生とご確認ください。',
+      backedBy: [],
+    };
+  }
   if (/保険料|負担/.test(objection)) {
     return {
       response: `最小プランは、保険料を年${man(calc.budget.min)}程度の目安に収めることを前提に、最も大きなリスクから先に備える設計です。業績や資金繰りに合わせて、後から保障を追加・見直しすることもできます。`,
@@ -143,12 +149,6 @@ function objectionResponse(ctx: NarrativeContext, objection: string): { response
   if (/運用|元本/.test(objection)) {
     return {
       response: '変額保険（定期型）は運用実績によって解約返戻金が変動し、解約返戻金に最低保証はありません。一方で、死亡保険金は基本保険金額が最低保証されます。運用による変動を避けたい場合は、定額の長期平準定期保険で設計することもできます。',
-      backedBy: [],
-    };
-  }
-  if (/節税|税負担|税金/.test(objection)) {
-    return {
-      response: '法人保険は万一の際の保障を目的とするものです。保険料を損金算入しても、受け取る保険金や解約返戻金は益金に算入されるため、通期での節税効果はありません。経理処理の取扱いは設計書をもとに、顧問税理士の先生とご確認ください。',
       backedBy: [],
     };
   }

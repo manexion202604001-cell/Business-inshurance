@@ -18,6 +18,7 @@ let cached: { key: string; client: Anthropic } | null = null;
 
 export function getClient(cfg: LlmConfig): Anthropic {
   const key = `${cfg.timeoutMs}:${cfg.maxRetries}`;
+  if (cached?.key === 'test') return cached.client;
   if (!cached || cached.key !== key) cached = { key, client: new Anthropic({ timeout: cfg.timeoutMs, maxRetries: cfg.maxRetries }) };
   return cached.client;
 }

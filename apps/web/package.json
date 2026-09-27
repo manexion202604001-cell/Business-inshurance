@@ -1,0 +1,43 @@
+{
+  "name": "@p3/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "fonts": "node scripts/copy-fonts.mjs",
+    "predev": "node scripts/copy-fonts.mjs",
+    "dev": "next dev -p 3000",
+    "prebuild": "node scripts/copy-fonts.mjs",
+    "build": "next build",
+    "start": "next start -p 3000",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "@fontsource/noto-serif-jp": "^5.2.0",
+    "@p3/compliance": "workspace:*",
+    "@p3/db": "workspace:*",
+    "@p3/engine": "workspace:*",
+    "@p3/knowledge": "workspace:*",
+    "@p3/llm": "workspace:*",
+    "@p3/pipeline": "workspace:*",
+    "@p3/render": "workspace:*",
+    "@prisma/client": "6.19.3",
+    "mammoth": "^1.11.0",
+    "next": "15.5.26",
+    "playwright-core": "1.56.1",
+    "server-only": "^0.0.1",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "unpdf": "^1.4.0",
+    "zod": "^4.1.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.56.1",
+    "@tailwindcss/postcss": "^4.1.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "tailwindcss": "^4.1.0",
+    "typescript": "~5.9.3"
+  }
+}

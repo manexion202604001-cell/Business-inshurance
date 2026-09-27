@@ -1,16 +1,12 @@
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import type { KnowledgeSnapshot } from '@p3/knowledge';
+import { EXTRACT_PROMPT, GENERATE_PROMPT, RATIONALE_EXAMPLES, SYSTEM_PROMPT } from '../prompts';
 
 export const PROMPT_VERSION = 'p3-prompts-2026.09.3';
 
-const dir = join(import.meta.dirname, '..', 'prompts');
-const read = (f: string) => readFileSync(join(dir, f), 'utf8');
-
-export const SYSTEM_BASE = read('system.md');
-export const EXTRACT_INSTRUCTIONS = read('extract.md');
-export const GENERATE_INSTRUCTIONS = read('generate.md');
-export const FEW_SHOT = JSON.parse(read('examples/rationale-pairs.json')) as { label: string; text: string; why: string }[];
+export const SYSTEM_BASE = SYSTEM_PROMPT;
+export const EXTRACT_INSTRUCTIONS = EXTRACT_PROMPT;
+export const GENERATE_INSTRUCTIONS = GENERATE_PROMPT;
+export const FEW_SHOT = RATIONALE_EXAMPLES;
 
 /**
  * Knowledge block placed at the top of the system prompt (stable across requests -> prompt cache).
