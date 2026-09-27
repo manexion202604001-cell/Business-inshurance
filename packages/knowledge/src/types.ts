@@ -84,6 +84,8 @@ export interface PresentationSettings {
   footerNote: string;
   requireApproval: boolean;
   showInternalRefs: boolean;
+  /** Case data retention period in days (cases older than this are deleted by `pnpm retention`). */
+  retentionDays?: number;
 }
 
 export interface InternalRef {

@@ -244,6 +244,18 @@ export function CaseResult({ initial, autoRun, canApprove, canSeeInternal, issue
               <Button variant="secondary" onClick={share} disabled={outputLocked}>
                 共有リンクを作成
               </Button>
+              {['generated', 'approved'].includes(view.status) && (
+                <Button
+                  variant="secondary"
+                  onClick={async () => {
+                    await fetch(`/api/cases/${view.id}`, { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ status: 'presented' }) });
+                    await reload();
+                    flash('提示済みにしました');
+                  }}
+                >
+                  顧客に提示済みにする
+                </Button>
+              )}
               <Button variant="danger" onClick={remove}>
                 案件を削除
               </Button>

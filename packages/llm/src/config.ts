@@ -5,8 +5,6 @@ export interface LlmConfig {
   fastModel: string;
   timeoutMs: number;
   maxRetries: number;
-  /** Run the 3 plan narratives as parallel calls instead of a single call. */
-  parallel: boolean;
 }
 
 /**
@@ -26,6 +24,5 @@ export function llmConfig(env: NodeJS.ProcessEnv = process.env): LlmConfig {
     fastModel: env.ANTHROPIC_MODEL_FAST || 'claude-haiku-4-5-20251001',
     timeoutMs: Number(env.P3_LLM_TIMEOUT_MS || 45000),
     maxRetries: 2,
-    parallel: env.P3_LLM_PARALLEL === '1',
   };
 }

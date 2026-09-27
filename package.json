@@ -16,11 +16,13 @@
     "test:e2e": "pnpm --filter @p3/web test:e2e",
     "poc": "tsx scripts/poc.ts",
     "render:samples": "tsx scripts/render-samples.ts",
+    "bench": "tsx scripts/bench.ts",
+    "retention": "tsx scripts/retention.ts",
     "db:generate": "prisma generate",
     "db:push": "prisma db push --skip-generate",
     "db:reset": "prisma db push --force-reset --skip-generate",
     "db:seed": "tsx prisma/seed.ts",
-    "setup": "pnpm db:generate && pnpm db:reset && pnpm db:seed"
+    "bootstrap": "pnpm db:generate && pnpm db:reset && pnpm db:seed && pnpm --filter @p3/web fonts"
   },
   "prisma": { "schema": "prisma/schema.prisma", "seed": "tsx prisma/seed.ts" },
   "devDependencies": {
