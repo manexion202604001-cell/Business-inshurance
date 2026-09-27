@@ -43,6 +43,15 @@ pnpm build && pnpm start          # 本番モード（http://localhost:3000）
 
 サンプルの架空企業3社（`fixtures/cases/`）は新規作成画面の「サンプル」ボタンから読み込めます。シード直後は3社の未作成案件も登録されています。
 
+## Web版（ブラウザ完結・claude.ai アーティファクト）
+
+サーバーなしでブラウザだけで動く版を `apps/artifact` に用意しています（計算・コンプライアンスチェック・資料テンプレートはサーバー版と同じコード）。
+
+- 公開先：https://claude.ai/artifact/EhJ8jphDRoHVfa64SUbtUS （初期状態は作成者のみ閲覧可。共有はページの「共有」メニューから）
+- 案件はログイン中の利用者ごとに非公開で保存、PDF／HTMLの保存、「Claudeで文章を磨く」（閲覧者の Claude 利用枠を使用）に対応
+- サーバー版との違い：PDF は画像ベース（ブラウザで生成）、承認フロー・監査ログ・ナレッジ管理画面・docx/pdf の取り込みはなし
+- ビルド：`pnpm --filter @p3/artifact build` → `apps/artifact/dist/proposal3.html`
+
 ## 環境変数
 
 | 変数 | 既定値 | 説明 |

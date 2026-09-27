@@ -30,5 +30,5 @@ export function disclaimerBlock(input: RenderInput, cls = 'xsmall'): string {
 export function htmlDoc(title: string, body: string, css: string, input: RenderInput, opts: RenderOptions): string {
   const accent = input.knowledge.presentation.accentColor || '#b08d57';
   return `<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${h(title)}</title>
-<style>${fontFaceCss(opts.fontBase)}${baseCss(accent)}${css}</style></head><body>${body}${opts.preview ? FIT_SCRIPT : ''}</body></html>`;
+<style>${opts.fontCss ?? fontFaceCss(opts.fontBase)}${baseCss(accent)}${css}</style></head><body>${body}${opts.preview ? FIT_SCRIPT : ''}</body></html>`;
 }

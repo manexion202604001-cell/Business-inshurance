@@ -1,0 +1,22 @@
+{
+  "name": "@p3/artifact",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Browser-only build of PROPOSAL-3 for publishing as a claude.ai Artifact",
+  "scripts": {
+    "build": "node build.mjs",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@p3/compliance": "workspace:*",
+    "@p3/engine": "workspace:*",
+    "@p3/knowledge": "workspace:*",
+    "@p3/llm": "workspace:*",
+    "@p3/pipeline": "workspace:*",
+    "@p3/render": "workspace:*"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0"
+  }
+}

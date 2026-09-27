@@ -21,6 +21,8 @@ export interface RenderInput {
 export interface RenderOptions {
   /** URL prefix where the Noto Serif JP woff2 files are served. */
   fontBase: string;
+  /** Complete @font-face / @import CSS to use instead of the bundled font files (e.g. Google Fonts in a browser). */
+  fontCss?: string;
   /** Include the internal reference table in the memo (manager+ only). */
   showInternalRefs?: boolean;
   /** Screen preview: add auto-fit zoom and page shadows. */

@@ -126,8 +126,12 @@ export interface NarrativeResult {
   error: string | null;
 }
 
-function buildUserPrompt(ctx: NarrativeContext, draft: Narrative, feedback: ComplianceIssue[]): string {
-  const money = Object.values(flattenMoney(ctx.calc, ctx.planSet)).map((m) => ({ calcId: m.calcId, value: m.value, unit: m.unit, formula: m.formula, ...(m.assumed ? { assumed: true } : {}) }));
+/**
+ * Build the Step 5 user prompt. `compact` drops formulas and the draft's merit/caution lists
+ * (they are re-derived in code) to stay under small input limits.
+ */
+export function buildUserPrompt(ctx: NarrativeContext, draft: Narrative, feedback: ComplianceIssue[], opts: { compact?: boolean } = {}): string {
+  const money = Object.values(flattenMoney(ctx.calc, ctx.planSet)).map((m) => ({ calcId: m.calcId, value: m.value, unit: m.unit, ...(opts.compact ? {} : { formula: m.formula }), ...(m.assumed ? { assumed: true } : {}) }));
   const plans = ctx.planSet.plans.map((p) => ({
     tier: p.tier,
     title: p.title,
@@ -152,22 +156,50 @@ function buildUserPrompt(ctx: NarrativeContext, draft: Narrative, feedback: Comp
     `<PLANS>\n${JSON.stringify(plans)}\n</PLANS>`,
     `<RULE_HITS>\n${JSON.stringify(ctx.planSet.ruleHits)}\n</RULE_HITS>`,
     `<CUSTOMER>\n${JSON.stringify(customer)}\n</CUSTOMER>`,
-    `<DRAFT>\n${JSON.stringify(draft)}\n</DRAFT>`,
+    `<DRAFT>\n${JSON.stringify(opts.compact ? { ...draft, plans: draft.plans.map((p) => ({ ...p, merits: [], cautions: [] })), rationaleMemo: [] } : draft)}\n</DRAFT>`,
   ];
+  if (opts.compact) parts.push('merits・cautions・rationaleMemo は空配列で返してください（コード側で補完します）。');
   if (feedback.length) {
     parts.push(`<FEEDBACK>\n前回の出力に次の問題がありました。すべて修正してください：\n${feedback.map((f) => `- [${f.section}] ${f.message}${f.suggestion ? `（${f.suggestion}）` : ''}`).join('\n')}\n</FEEDBACK>`);
   }
   return parts.join('\n\n');
 }
 
+/** Lists the model may leave empty (compact prompts) are filled from the template. */
+function fillEmpty(n: Narrative, tpl: Narrative): Narrative {
+  return {
+    ...n,
+    plans: n.plans.map((p) => {
+      const t = tpl.plans.find((x) => x.tier === p.tier);
+      return t ? { ...p, merits: p.merits.length ? p.merits : t.merits, cautions: p.cautions.length ? p.cautions : t.cautions } : p;
+    }),
+    rationaleMemo: n.rationaleMemo.length ? n.rationaleMemo : tpl.rationaleMemo,
+  };
+}
+
+/** A function that sends the user prompt to a model and resolves the raw (unvalidated) JSON output. */
+export type NarrativeCaller = (prompt: string) => Promise<{ data: unknown; usage?: LlmUsage | null }>;
+
 /** Step 5 (+ grounding part of Step 6): language generation with validation, retries and template fallback. */
-export async function generateNarrative(ctx: NarrativeContext, cfg: LlmConfig, opts: { maxRegenerations?: number } = {}): Promise<NarrativeResult> {
+export async function generateNarrative(ctx: NarrativeContext, cfg: LlmConfig, opts: { maxRegenerations?: number; caller?: NarrativeCaller } = {}): Promise<NarrativeResult> {
+  const caller: NarrativeCaller | null =
+    opts.caller ??
+    (cfg.enabled
+      ? async (prompt) => {
+          const r = await structuredCall({ cfg, model: cfg.mainModel, knowledge: ctx.knowledge, schema: NarrativeSchema, temperature: 0.4, user: prompt });
+          return { data: r.data, usage: r.usage };
+        }
+      : null);
+  return runNarrativeLoop(ctx, caller, opts.maxRegenerations ?? 2);
+}
+
+/** The validation / regeneration / patch loop, independent of how the model is called. */
+export async function runNarrativeLoop(ctx: NarrativeContext, caller: NarrativeCaller | null, maxRegen = 2, promptOpts: { compact?: boolean } = {}): Promise<NarrativeResult> {
   const pool = groundingPool(ctx);
   const tpl = enforceCautions(templateNarrative(ctx), ctx);
-  if (!cfg.enabled) return { narrative: tpl, source: 'template', attempts: 0, usage: [], patched: [], issuesBeforePatch: [], error: null };
+  if (!caller) return { narrative: tpl, source: 'template', attempts: 0, usage: [], patched: [], issuesBeforePatch: [], error: null };
 
   const usage: LlmUsage[] = [];
-  const maxRegen = opts.maxRegenerations ?? 2;
   let feedback: ComplianceIssue[] = [];
   let last: Narrative | null = null;
   let lastIssues: ComplianceIssue[] = [];
@@ -176,14 +208,19 @@ export async function generateNarrative(ctx: NarrativeContext, cfg: LlmConfig, o
   for (let i = 0; i <= maxRegen; i++) {
     attempts++;
     try {
-      const { data, usage: u } = await structuredCall({ cfg, model: cfg.mainModel, knowledge: ctx.knowledge, schema: NarrativeSchema, temperature: 0.4, user: buildUserPrompt(ctx, tpl, feedback) });
-      usage.push(u);
-      last = enforceCautions(data, ctx);
+      const { data, usage: u } = await caller(buildUserPrompt(ctx, tpl, feedback, promptOpts));
+      if (u) usage.push(u);
+      const parsed = NarrativeSchema.safeParse(data);
+      if (!parsed.success) {
+        feedback = [{ type: 'schema', severity: 'error', section: 'plans', message: `出力がスキーマに合いません：${parsed.error.issues.slice(0, 3).map((x) => `${x.path.join('.')} ${x.message}`).join(' / ')}` }];
+        continue;
+      }
+      last = enforceCautions(fillEmpty(parsed.data, tpl), ctx);
       lastIssues = narrativeIssues(last, ctx, pool);
       if (!lastIssues.some((x) => x.severity === 'error')) return { narrative: last, source: 'llm', attempts, usage, patched: [], issuesBeforePatch: lastIssues, error: null };
       feedback = lastIssues.filter((x) => x.severity === 'error');
     } catch (e) {
-      error = e instanceof Error ? e.message : String(e);
+      error = e instanceof Error ? e.message : typeof e === 'object' && e && 'message' in e ? String((e as { message: unknown }).message) : String(e);
       break;
     }
   }

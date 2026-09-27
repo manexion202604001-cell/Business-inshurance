@@ -24,6 +24,7 @@ import {
   type LlmConfig,
   type LlmUsage,
   type Narrative,
+  type NarrativeCaller,
   type NarrativeContext,
 } from '@p3/llm';
 import { PDF_FONT_BASE, renderDoc, scanRendered, type DocType, type RenderInput } from '@p3/render';
@@ -69,6 +70,10 @@ export interface PipelineOptions {
   reuse?: { normalizedLog: string; inputMaskHits: { kind: string; match: string }[]; extraction: Extraction };
   llmReview?: boolean;
   now?: () => Date;
+  /** Custom model caller for Step 5 (e.g. a browser-side Claude call). */
+  narrativeCaller?: NarrativeCaller;
+  /** Render options for the Step 7 scan (font CSS override for browsers). */
+  fontCss?: string;
 }
 
 export interface Supplement {
@@ -227,7 +232,7 @@ export async function runPipeline(form: CaseForm, k: KnowledgeSnapshot, opts: Pi
     extraction,
     knowledge: k,
   };
-  const nar = await step(5, () => generateNarrative(ctx, cfg), (v) => ({ source: v.source, attempts: v.attempts }));
+  const nar = await step(5, () => generateNarrative(ctx, cfg, opts.narrativeCaller ? { caller: opts.narrativeCaller } : {}), (v) => ({ source: v.source, attempts: v.attempts }));
   usage.push(...nar.usage);
 
   // Step 6: validation of the narrative (grounding already enforced in step 5) + optional LLM review
@@ -247,7 +252,7 @@ export async function runPipeline(form: CaseForm, k: KnowledgeSnapshot, opts: Pi
   await step(7, () => {
     const ri = toRenderInput(renderBase, k);
     for (const t of DOC_TYPES) {
-      const html = renderDoc(t, ri, { fontBase: PDF_FONT_BASE });
+      const html = renderDoc(t, ri, { fontBase: PDF_FONT_BASE, ...(opts.fontCss ? { fontCss: opts.fontCss } : {}) });
       docReports[t] = scanRendered(t, html, ri);
       issues.push(...docReports[t].issues);
     }
